@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Keychain Designer</title>
+
+```
+<!-- Bootstrap -->
+<link
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+  rel="stylesheet"
+/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Font Awesome -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+/>
+
+<style>
+  body {
+    overflow-x: hidden;
+    background-color: #f9fafb;
+  }
+  .card-animate {
+    transition: all 0.3s ease;
+  }
+  .card-animate:hover {
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    transform: translateY(-5px);
+  }
+
+  .btn-purple {
+    background: #6d28d9;
+    color: #fff;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  .btn-purple:hover {
+    background: #5b21b6;
+    transform: translateY(-1px);
+    box-shadow: 0px 8px 18px rgba(109, 40, 217, 0.3);
+  }
+
+  .mousepad-preview {
+    position: relative;
+    width: 540px;
+    height: 360px;
+    margin: 0 auto;
+    perspective: 1000px;
+  }
+  .flip-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+  }
+  .flip-container.flip-active {
+    transform: rotateY(180deg);
+  }
+
+  .keychain-side {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .keychain-back {
+    transform: rotateY(180deg);
+  }
+
+  .uploaded-design {
+    position: absolute;
+    top: 18%;
+    left: 12%;
+    width: 75%;
+    height: 65%;
+    object-fit: cover;
+    cursor: move;
+    border-radius: 10px;
+    user-select: none;
+    touch-action: none;
+    transition: all 0.3s ease;
+  }
+
+  .resize-handle {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: #6d28d9;
+    border-radius: 50%;
+    bottom: 5px;
+    right: 5px;
+    cursor: nwse-resize;
+    z-index: 10;
+  }
+
+  .shape-btn {
+    border: 2px solid #a78bfa;
+    color: #6d28d9;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 6px 14px;
+    background: white;
+    transition: all 0.3s;
+  }
+  .shape-btn.active,
+  .shape-btn:hover {
+    background: #6d28d9;
+    color: white;
+  }
+
+  .material-btn {
+    border: 2px solid #a78bfa;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 6px 20px;
+    background: white;
+    transition: all 0.3s;
+    color: #6d28d9;
+  }
+  .material-btn.active,
+  .material-btn:hover {
+    background: #6d28d9;
+    color: white;
+  }
+
+  .placeholder-box {
+    width: 100%;
+    min-height: 120px;
+    border: 2px dashed #a78bfa;
+    background-color: #f5f3ff;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+  }
+  .placeholder-box img {
+    width: 30%;
+    height: auto;
+    margin: 5px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  .placeholder-box img:hover {
+    transform: scale(1.05);
+  }
+</style>
+```
+
+  </head>
+
+  <body class="font-sans">
+    <div class="container py-5">
+      <div
+        class="bg-white p-5 rounded-xl shadow-md card-animate flex flex-col md:flex-row items-center justify-between gap-8"
+      >
+        <div
+          class="flex flex-col items-center justify-center text-center w-full md:w-1/2"
+        >
+          <div class="mousepad-preview mb-3">
+            <div class="flip-container" id="flipContainer">
+              <div class="keychain-side keychain-front heart" id="frontSide">
+                <img id="uploadedImageFront" class="uploaded-design hidden" />
+                <div id="resizeHandleFront" class="resize-handle hidden"></div>
+              </div>
+              <div class="keychain-side keychain-back heart" id="backSide">
+                <img id="uploadedImageBack" class="uploaded-design hidden" />
+                <div id="resizeHandleBack" class="resize-handle hidden"></div>
+              </div>
+            </div>
+          </div>
+
+```
+      <div class="mt-3 flex gap-3 justify-center flex-wrap">
+        <button class="btn btn-purple px-4 py-2 rounded-xl" id="flipBtn">
+          <i class="fa fa-sync me-2"></i> Flip
+        </button>
+      </div>
+
+      <h6 class="mt-4 text-gray-800 font-semibold">Material Type</h6>
+      <div class="flex gap-3 justify-center flex-wrap my-2">
+        <button class="material-btn active" data-material="fibreboard">
+          Fibreboard
+        </button>
+        <button class="material-btn" data-material="metal">Metal</button>
+      </div>
+
+      <div id="shapeButtons" class="flex gap-3 justify-center flex-wrap my-2"></div>
+
+      <div class="placeholder-box" id="imagePlaceholder">
+        <p class="text-gray-500 text-center w-full">
+          Upload up to 3 images to preview below
+        </p>
+      </div>
+
+      <div class="flex gap-3 justify-center flex-wrap">
+        <input
+          type="file"
+          id="imageInput"
+          accept="image/*"
+          multiple
+          class="hidden"
+        />
+        <button class="btn btn-purple px-4 py-2 rounded-xl" id="uploadBtn">
+          <i class="fa fa-upload me-2"></i> Upload Images
+        </button>
+        <button class="btn btn-purple px-4 py-2 rounded-xl" id="saveBtn">
+          <i class="fa fa-save me-2"></i> Save Images
+        </button>
+      </div>
+    </div>
+
+    <div class="text-center md:text-left w-full md:w-1/2">
+      <h2 class="text-2xl font-bold mb-2">Customizable Keychain</h2>
+      <p class="text-xl font-semibold mb-3 text-gray-700">$5.99</p>
+      <p class="text-gray-600 mb-4">
+        Choose material and shape, upload a photo and position/resize it.
+        Flip to design both sides.
+      </p>
+      <button class="btn w-100 mt-3 btn-purple rounded-xl py-2">
+        Add to Cart
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const flipBtn = document.getElementById("flipBtn");
+  const flipContainer = document.getElementById("flipContainer");
+  const imageInput = document.getElementById("imageInput");
+  const uploadBtn = document.getElementById("uploadBtn");
+  const uploadedImageFront = document.getElementById("uploadedImageFront");
+  const uploadedImageBack = document.getElementById("uploadedImageBack");
+
+  const materialBtns = document.querySelectorAll(".material-btn");
+  const shapeContainer = document.getElementById("shapeButtons");
+
+  const urls = {
+    fibreboard: {
+      heart: "https://ik.imagekit.io/nyk7nt0gnr/Gemini_Generated_Image_r5hp8ir5hp8ir5hp.png",
+      circle: "https://ik.imagekit.io/nyk7nt0gnr/Gemini_Generated_Image_zbtb4zzbtb4zzbtb.png",
+      rectangle: "https://ik.imagekit.io/nyk7nt0gnr/Gemini_Generated_Image_gxhispgxhispgxhi.png?updatedAt=1761849295225",
+    },
+    metal: {
+      circle: "https://ik.imagekit.io/nyk7nt0gnr/Gemini_Generated_Image_zbtb4zzbtb4zzbtb.png",
+      rectangle: "https://ik.imagekit.io/nyk7nt0gnr/Gemini_Generated_Image_gxhispgxhispgxhi.png?updatedAt=1761849295225",
+    },
+  };
+
+  let material = "fibreboard";
+  let currentShape = "heart";
+  let activeSide = "front";
+
+  function renderShapes() {
+    shapeContainer.innerHTML = "";
+    const shapes =
+      material === "fibreboard"
+        ? ["heart", "circle", "rectangle"]
+        : ["circle", "rectangle"];
+    shapes.forEach((shape) => {
+      const btn = document.createElement("button");
+      btn.className =
+        "shape-btn" + (shape === currentShape ? " active" : "");
+      btn.textContent = shape.charAt(0).toUpperCase() + shape.slice(1);
+      btn.addEventListener("click", () => applyShape(shape));
+      shapeContainer.appendChild(btn);
+    });
+  }
+
+  materialBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      materialBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      material = btn.dataset.material;
+      if (material === "metal" && currentShape === "heart")
+        currentShape = "circle";
+      renderShapes();
+      applyShape(currentShape);
+    });
+  });
+
+  flipBtn.addEventListener("click", () => {
+    flipContainer.classList.toggle("flip-active");
+    activeSide = activeSide === "front" ? "back" : "front";
+  });
+
+  function applyShape(shape) {
+    currentShape = shape;
+    const sides = [
+      document.getElementById("frontSide"),
+      document.getElementById("backSide"),
+    ];
+    sides.forEach((s) => {
+      s.style.background = `url(${urls[material][shape]}) center/contain no-repeat`;
+    });
+  }
+
+  uploadBtn.addEventListener("click", () => imageInput.click());
+  imageInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const src = ev.target.result;
+      if (activeSide === "front") {
+        uploadedImageFront.src = src;
+        uploadedImageFront.classList.remove("hidden");
+      } else {
+        uploadedImageBack.src = src;
+        uploadedImageBack.classList.remove("hidden");
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  renderShapes();
+  applyShape("heart");
+</script>
+```
+
+  </body>
+</html>
