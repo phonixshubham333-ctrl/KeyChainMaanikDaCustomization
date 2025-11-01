@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Keychain Designer</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+
+    <style>
+      body {
+        overflow-x: hidden;
+        background-color: #f9fafb;
+      }
+      .card-animate {
+        transition: all 0.3s ease;
+      }
+      .card-animate:hover {
+        box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+        transform: translateY(-5px);
+      }
+
+      .btn-purple {
+        background: #6d28d9;
+        color: #fff;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+      .btn-purple:hover {
+        background: #5b21b6;
+        transform: translateY(-1px);
+        box-shadow: 0px 8px 18px rgba(109, 40, 217, 0.3);
+      }
+
+      .mousepad-preview {
+        position: relative;
+        width: 540px;
+        height: 360px;
+        margin: 0 auto;
+        perspective: 1000px;
+      }
+      .flip-container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transition: transform 0.8s;
+        transform-style: preserve-3d;
+      }
+      .flip-container.flip-active {
+        transform: rotateY(180deg);
+      }
+
+      .keychain-side {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        backface-visibility: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .keychain-back {
+        transform: rotateY(180deg);
+      }
+
+      /* Keychain backgrounds */
+      .keychain-front.heart,
+      .keychain-back.heart {
+        background: url("https://ik.imagekit.io/nyk7nt0gnr/Gemini_Generated_Image_r5hp8ir5hp8ir5hp.png")
+          center/contain no-repeat;
+      }
+      .keychain-front.circle,
+      .keychain-back.circle {
+        background: url("https://ik.imagekit.io/nyk7nt0gnr/Gemini_Generated_Image_zbtb4zzbtb4zzbtb.png")
+          center/contain no-repeat;
+      }
+      .keychain-front.rectangle,
+      .keychain-back.rectangle {
+        background: url("https://ik.imagekit.io/nyk7nt0gnr/Gemini_Generated_Image_gxhispgxhispgxhi.png?updatedAt=1761849295225")
+          center/contain no-repeat;
+      }
+
+      /* Uploaded image area */
+      .uploaded-design {
+        position: absolute;
+        /* Default position/size, adjusted in JS */
+        top: 18%;
+        left: 12%;
+        width: 75%;
+        height: 65%;
+        object-fit: cover;
+        cursor: move;
+        border-radius: 10px;
+        user-select: none;
+        touch-action: none;
+        transition: all 0.3s ease;
+      }
+
+      /* Masks for shapes - now mostly initial state, resized in JS */
+      .uploaded-design.heart {
+        position: absolute;
+        top: 20%;
+        left: 15%;
+        width: 200px;
+        height: 190px;
+        background-size: cover;
+        background-position: center;
+        /* The clip-path is now set dynamically in JavaScript */
+      }
+      .uploaded-design.circle {
+        border-radius: 50%;
+        /* Initial size for circle */
+        width: 200px;
+        height: 200px;
+        top: 20%;
+        left: 20%;
+      }
+      .uploaded-design.rectangle {
+        border-radius: 10px;
+      }
+
+      .resize-handle {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        background: #6d28d9;
+        border-radius: 50%;
+        bottom: 5px;
+        right: 5px;
+        cursor: nwse-resize;
+        z-index: 10;
+      }
+
+      .shape-btn {
+        border: 2px solid #a78bfa;
+        color: #6d28d9;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 6px 14px;
+        background: white;
+        transition: all 0.3s;
+      }
+      .shape-btn.active,
+      .shape-btn:hover {
+        background: #6d28d9;
+        color: white;
+      }
+
+      .placeholder-box {
+        width: 100%;
+        min-height: 120px;
+        border: 2px dashed #a78bfa;
+        background-color: #f5f3ff;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 10px;
+        margin-top: 15px;
+        margin-bottom: 15px; /* Added margin for separation */
+      }
+      .placeholder-box img {
+        width: 30%;
+        height: auto;
+        margin: 5px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+      .placeholder-box img:hover {
+        transform: scale(1.05);
+      }
+    </style>
+  </head>
+
+  <body class="font-sans">
+    <div class="container py-5">
+      <div
+        class="bg-white p-5 rounded-xl shadow-md card-animate flex flex-col md:flex-row items-center justify-between gap-8"
+      >
+        <div
+          class="flex flex-col items-center justify-center text-center w-full md:w-1/2"
+        >
+          <div class="flex gap-3 mb-3 w-full justify-center">
+            <button class="shape-btn active" data-shape="heart">
+              ❤️ Heart
+            </button>
+            <button class="shape-btn" data-shape="circle">🔵 Circle</button>
+            <button class="shape-btn" data-shape="rectangle">
+              ⬛ Rectangle
+            </button>
+            </div>
+            
+          <div class="mousepad-preview">
+            <div class="flip-container" id="flipContainer">
+              <div class="keychain-side keychain-front heart" id="frontSide">
+                <img id="uploadedImageFront" class="uploaded-design hidden" />
+                <div id="resizeHandleFront" class="resize-handle hidden"></div>
+              </div>
+              <div class="keychain-side keychain-back heart" id="backSide">
+                <img id="uploadedImageBack" class="uploaded-design hidden" />
+                <div id="resizeHandleBack" class="resize-handle hidden"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex gap-3 justify-center flex-wrap">
+            <button class="btn btn-purple px-4 py-2 rounded-xl" id="flipBtn">
+              <i class="fa fa-sync me-2"></i> Flip
+            </button>
+          </div>
+
+          <div class="placeholder-box" id="imagePlaceholder">
+            <p class="text-gray-500 text-center w-full">
+              Upload up to 3 images to preview below
+            </p>
+          </div>
+
+          <div class="flex gap-3 justify-center flex-wrap">
+            <input
+              type="file"
+              id="imageInput"
+              accept="image/*"
+              multiple
+              class="hidden"
+            />
+            <button class="btn btn-purple px-4 py-2 rounded-xl" id="uploadBtn">
+              <i class="fa fa-upload me-2"></i> Upload Images
+            </button>
+            <button class="btn btn-purple px-4 py-2 rounded-xl" id="saveBtn">
+              <i class="fa fa-save me-2"></i> Save Images
+            </button>
+          </div>
+        </div>
+
+        <div class="text-center md:text-left w-full md:w-1/2">
+          <h2 class="text-2xl font-bold mb-2">Customizable Keychain</h2>
+          <p class="text-xl font-semibold mb-3 text-gray-700">$5.99</p>
+          <p class="text-gray-600 mb-4">
+            Choose shape, upload a photo and position/resize it. Flip to design
+            both sides.
+          </p>
+          <button class="btn w-100 mt-3 btn-purple rounded-xl py-2">
+            Add to Cart
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const shapeBtns = document.querySelectorAll(".shape-btn");
+      const flipContainer = document.getElementById("flipContainer");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const saveBtn = document.getElementById("saveBtn"); 
+      const flipBtn = document.getElementById("flipBtn");
+      const imageInput = document.getElementById("imageInput");
+      const imagePlaceholder = document.getElementById("imagePlaceholder");
+      const uploadedImageFront = document.getElementById("uploadedImageFront");
+      const uploadedImageBack = document.getElementById("uploadedImageBack");
+      const resizeHandleFront = document.getElementById("resizeHandleFront");
+      const resizeHandleBack = document.getElementById("resizeHandleBack");
+      let activeSide = "front";
+      let currentShape = "heart";
+      
+      // Store the image source for each side
+      let frontImageSrc = null;
+      let backImageSrc = null;
+
+      shapeBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          shapeBtns.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentShape = btn.dataset.shape;
+          applyShape(currentShape);
+        });
+      });
+
+      // --- Function to apply Heart Clip-Path dynamically ---
+      function applyHeartClipPath(imgElement) {
+        const width = imgElement.offsetWidth;
+        const height = imgElement.offsetHeight;
+
+        // Scaling factors to normalize the path to the current element size (Original was 200x190)
+        const scaleX = width / 200; 
+        const scaleY = height / 190; 
+        
+        // Define path using scaled coordinates
+        const path = `M${100 * scaleX},${30 * scaleY} C${60 * scaleX},${7 * scaleY} ${0 * scaleX},${7 * scaleY} ${0 * scaleX},${76 * scaleY} C${0 * scaleX},${131 * scaleY} ${100 * scaleX},${190 * scaleY} ${100 * scaleX},${190 * scaleY} C${100 * scaleX},${190 * scaleY} ${200 * scaleX},${131 * scaleY} ${200 * scaleX},${76 * scaleY} C${200 * scaleX},${7 * scaleY} ${140 * scaleX},${7 * scaleY} ${100 * scaleX},${30 * scaleY}`;
+
+        imgElement.style.clipPath = `path("${path}")`;
+        imgElement.style.webkitClipPath = `path("${path}")`;
+      }
+      // --------------------------------------------------------
+
+      function applyShape(shape) {
+        const sides = [
+          document.getElementById("frontSide"),
+          document.getElementById("backSide"),
+        ];
+
+        sides.forEach((side) => {
+          side.classList.remove("heart", "circle", "rectangle");
+          side.classList.add(shape);
+        });
+
+        // Apply new shape styling and re-render image if it exists
+        [
+          { img: uploadedImageFront, handle: resizeHandleFront, src: frontImageSrc, side: 'front' },
+          { img: uploadedImageBack, handle: resizeHandleBack, src: backImageSrc, side: 'back' }
+        ].forEach((item) => {
+          item.img.classList.remove("heart", "circle", "rectangle");
+          item.img.classList.add(shape);
+          
+          // Clear any dynamic styling
+          item.img.style.clipPath = '';
+          item.img.style.webkitClipPath = '';
+          item.img.style.borderRadius = ''; 
+          item.img.style.backgroundImage = ''; // Clear background image style
+
+          // Re-set image properties based on new shape
+          if (item.src) {
+              if (shape === "heart") {
+                  item.img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E";
+                  item.img.style.backgroundImage = `url(${item.src})`;
+                  // Set initial heart size and position 
+                  item.img.style.width = '200px'; 
+                  item.img.style.height = '190px'; 
+                  item.img.style.top = '20%'; 
+                  item.img.style.left = '15%'; 
+                  applyHeartClipPath(item.img);
+              } else if (shape === "circle") {
+                  item.img.src = item.src;
+                  item.img.style.borderRadius = '50%';
+                  // Set initial circle size and position (can be flexible)
+                  item.img.style.width = '200px';
+                  item.img.style.height = '200px';
+                  item.img.style.top = '20%';
+                  item.img.style.left = '20%';
+              }
+              else { // rectangle
+                  item.img.src = item.src;
+                  item.img.style.borderRadius = '10px'; 
+                  // Reset to default non-heart/circle size/position
+                  item.img.style.width = '75%';
+                  item.img.style.height = '65%';
+                  item.img.style.top = '18%'; 
+                  item.img.style.left = '12%'; 
+              }
+              item.img.classList.remove("hidden");
+              item.handle.classList.remove("hidden");
+          } else {
+              item.img.classList.add("hidden");
+              item.handle.classList.add("hidden");
+          }
+        });
+      }
+
+      flipBtn.addEventListener("click", () => {
+        flipContainer.classList.toggle("flip-active");
+        activeSide = activeSide === "front" ? "back" : "front";
+      });
+
+      uploadBtn.addEventListener("click", () => imageInput.click());
+      saveBtn.addEventListener("click", () => alert("Image settings saved!"));
+
+      imageInput.addEventListener("change", (e) => {
+        const files = Array.from(e.target.files).slice(0, 3);
+        imagePlaceholder.innerHTML = "";
+        if (files.length === 0) return;
+
+        const first = files[0];
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const src = ev.target.result;
+            if (activeSide === 'front') {
+                frontImageSrc = src;
+            } else {
+                backImageSrc = src;
+            }
+            setImage(src, activeSide);
+        };
+        reader.readAsDataURL(first);
+
+        files.forEach((file) => {
+          const r = new FileReader();
+          r.onload = (ev) => {
+            const img = document.createElement("img");
+            const src = ev.target.result;
+            img.src = src;
+            img.addEventListener("click", () => {
+                if (activeSide === 'front') {
+                    frontImageSrc = src;
+                } else {
+                    backImageSrc = src;
+                }
+                setImage(src, activeSide)
+            });
+            imagePlaceholder.appendChild(img);
+          };
+          r.readAsDataURL(file);
+        });
+      });
+
+      function setImage(src, side) {
+        const img = side === "front" ? uploadedImageFront : uploadedImageBack;
+        const handle = side === "front" ? resizeHandleFront : resizeHandleBack;
+
+        // Reset previous shape classes and styles
+        img.classList.remove("heart", "circle", "rectangle");
+        img.classList.add(currentShape);
+        img.style.clipPath = '';
+        img.style.webkitClipPath = '';
+        img.style.borderRadius = ''; 
+        img.style.backgroundImage = ''; // Clear background image style
+
+        if (currentShape === "heart") {
+          // For heart, use background-image for clipping
+          img.style.backgroundImage = `url(${src})`;
+          img.src =
+            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E";
+          // Set initial heart size and position
+          img.style.width = '200px'; 
+          img.style.height = '190px'; 
+          img.style.top = '20%'; 
+          img.style.left = '15%'; 
+          applyHeartClipPath(img);
+
+        } else if (currentShape === "circle") {
+          img.src = src;
+          img.style.borderRadius = "50%"; // Apply the circle mask
+          // Set initial circle size and position
+          img.style.width = '200px'; 
+          img.style.height = '200px'; 
+          img.style.top = '20%'; 
+          img.style.left = '20%'; 
+        }
+        else { // rectangle
+          img.src = src;
+          img.style.borderRadius = '10px';
+          // Reset to default non-heart/circle size/position
+          img.style.width = '75%';
+          img.style.height = '65%';
+          img.style.top = '18%'; 
+          img.style.left = '12%'; 
+        }
+
+        img.classList.remove("hidden");
+        handle.classList.remove("hidden");
+      }
+
+      // Drag + Resize
+      [uploadedImageFront, uploadedImageBack].forEach((img, i) => {
+        let isDragging = false,
+          isResizing = false;
+        let startX, startY, startW, startH, startL, startT;
+        const resizeHandle = i === 0 ? resizeHandleFront : resizeHandleBack;
+        const parent = img.parentElement;
+
+        img.addEventListener("mousedown", (e) => {
+          // Only allow dragging on the active side
+          if ((i === 0 && activeSide === 'back') || (i === 1 && activeSide === 'front')) return;
+
+          isDragging = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          const rect = img.getBoundingClientRect();
+          const pRect = parent.getBoundingClientRect();
+          startL = rect.left - pRect.left;
+          startT = rect.top - pRect.top;
+          e.preventDefault();
+        });
+
+        resizeHandle.addEventListener("mousedown", (e) => {
+          // Only allow resizing on the active side
+          if ((i === 0 && activeSide === 'back') || (i === 1 && activeSide === 'front')) return;
+
+          isResizing = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          startW = img.offsetWidth;
+          startH = img.offsetHeight;
+          e.preventDefault();
+          e.stopPropagation();
+        });
+
+        document.addEventListener("mousemove", (e) => {
+          if (isDragging) {
+            // Only apply drag if this is the active side
+            if ((i === 0 && activeSide === 'back') || (i === 1 && activeSide === 'front')) return;
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            img.style.left = `${startL + dx}px`;
+            img.style.top = `${startT + dy}px`;
+          } else if (isResizing) {
+            // Only apply resize if this is the active side
+            if ((i === 0 && activeSide === 'back') || (i === 1 && activeSide === 'front')) return;
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            let newW = startW + dx;
+            let newH = startH + dy;
+            
+            // --- MODIFIED RESIZE LOGIC (Kept same as requested) ---
+            if (currentShape === "heart") {
+                // Heart MUST maintain aspect ratio
+                const maxChange = Math.max(dx, dy); 
+                newW = startW + maxChange;
+                newH = startH + maxChange;
+            }
+            // Circle and Rectangle are freely resizable (Ellipse and free Rectangle)
+            // ---------------------------------------------
+
+            img.style.width = `${Math.max(50, newW)}px`; // Enforce a min size of 50px
+            img.style.height = `${Math.max(50, newH)}px`;
+
+            if (currentShape === "heart") {
+                applyHeartClipPath(img); // Recalculate clip-path to resize the heart mask
+            }
+          }
+        });
+
+        document.addEventListener("mouseup", () => {
+          isDragging = false;
+          isResizing = false;
+        });
+      });
+    </script>
+  </body>
+</html>
